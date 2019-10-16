@@ -10,7 +10,7 @@ from blockchain import Chain
 def main():
     user_identity = str(uuid.uuid4()).lower()
     chain = Chain(user_identity)
-    chain.push_block("うんち".encode())
+    # chain.push_block("".encode())
 
     api_service = ApiService()
     api_service.run()

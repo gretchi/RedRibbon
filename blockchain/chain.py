@@ -7,6 +7,7 @@ import json
 
 BLOCK_CHAIN_FILE_PATH = "./chain.json"
 GENESIS_DATA = b"Genesis!"
+GENESIS_DATA_MIME_TYPE = "text/plain"
 
 class Chain(object):
     def __init__(self, user_identity):
@@ -18,7 +19,7 @@ class Chain(object):
 
     def _genesis(self):
         if len(self._block_chain) == 0:
-            self.push_block(GENESIS_DATA)
+            self.push_block(GENESIS_DATA, GENESIS_DATA_MIME_TYPE)
 
 
     def _load(self):
@@ -75,22 +76,38 @@ class Chain(object):
         return "0" * 64
 
 
-    def push_block(self, data):
+    def push_block(self, data, mime_type=None, metadata={}):
         """Push block
 
         Arguments:
             data {bytes} -- Data
+            mime_type {str} -- MIME Type
+                Available types: https://www.iana.org/assignments/media-types/media-types.xhtml
+            metadata {dict} -- Metadatas
         """
         now = datetime.datetime.now(tz=datetime.timezone.utc)
         ts = now.isoformat(timespec="microseconds")
+        encoded_data = self.encode(data)
 
         block_data = {
-            "ts": ts,
-            "author": self._user_identity,
-            "previous_hash": self._last_hash,
-            "data": self.encode(data)
+            "ts": ts
+            , "author": self._user_identity
+            , "previous_hash": self._last_hash
+            , "data": encoded_data
+            , "metadata": {
+                "data_length": len(data)
+                , "encoded_data_length": len(encoded_data)
+                , "mime_type": mime_type
+            }
         }
 
+        reserved_metadata_keys = [key for key, _, in block_data["metadata"]]
+
+        for k, v in metadata.items():
+            if k in reserved_metadata_keys:
+                raise KeyError(f"Metadata key '{k}' is a reserved key")
+
+        block_data["metadata"].update(metadata)
 
         serialized_block_data = self.serialize(block_data)
 
