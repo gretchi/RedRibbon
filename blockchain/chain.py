@@ -4,14 +4,21 @@ import hashlib
 import base64
 import datetime
 import json
+import binascii
+
+import digital_signature
 
 BLOCK_CHAIN_FILE_PATH = "./chain.json"
 GENESIS_DATA = b"Genesis!"
 GENESIS_DATA_MIME_TYPE = "text/plain"
+VERSION = "1"
+
 
 class Chain(object):
-    def __init__(self, user_identity):
+    def __init__(self, user_identity, secret_key, public_key):
         self._user_identity = user_identity
+        self._secret_key = secret_key
+        self._public_key = public_key
         self._block_chain_file_path = os.path.abspath(BLOCK_CHAIN_FILE_PATH)
         self._block_chain = self._load()
         self._genesis()
@@ -29,6 +36,10 @@ class Chain(object):
                 return json.load(fh)
 
         return []
+
+    def _if_necessary_save(self):
+        if self._block_chain_file_path is not None:
+            self._save()
 
 
     def _save(self):
@@ -76,7 +87,7 @@ class Chain(object):
         return "0" * 64
 
 
-    def push_block(self, data, metadata={}):
+    def push_block(self, data, **metadata):
         """Push block
 
         Arguments:
@@ -91,20 +102,25 @@ class Chain(object):
 
         block_data = {
             "ts": ts
+            , "v": VERSION
             , "author": self._user_identity
             , "previous_hash": self._last_hash
             , "data": encoded_data
             , "data_length": len(data)
-            , "metadata": {
-            }
+            , "public_key": str(binascii.hexlify(self._public_key), "ascii")
+            , "metadata": metadata
         }
 
-        block_data["metadata"].update(metadata)
 
+        # Hashing
         serialized_block_data = self.serialize(block_data)
-
         hash = self.sha256(serialized_block_data.encode())
         block_data["hash"] = hash
 
+        # Signature
+        serialized_block_data = self.serialize(block_data).encode()
+        signature = digital_signature.signature(self._secret_key, serialized_block_data)
+        block_data["signature"] = str(binascii.hexlify(signature), "ascii")
+
         self._block_chain.append(block_data)
-        self._save()
+        self._if_necessary_save()
