@@ -76,7 +76,7 @@ class Chain(object):
         return "0" * 64
 
 
-    def push_block(self, data, mime_type=None, metadata={}):
+    def push_block(self, data, metadata={}):
         """Push block
 
         Arguments:
@@ -94,18 +94,10 @@ class Chain(object):
             , "author": self._user_identity
             , "previous_hash": self._last_hash
             , "data": encoded_data
+            , "data_length": len(data)
             , "metadata": {
-                "data_length": len(data)
-                , "encoded_data_length": len(encoded_data)
-                , "mime_type": mime_type
             }
         }
-
-        reserved_metadata_keys = [key for key, _, in block_data["metadata"]]
-
-        for k, v in metadata.items():
-            if k in reserved_metadata_keys:
-                raise KeyError(f"Metadata key '{k}' is a reserved key")
 
         block_data["metadata"].update(metadata)
 
