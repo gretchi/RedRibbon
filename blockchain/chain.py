@@ -10,7 +10,6 @@ import digital_signature
 
 BLOCK_CHAIN_FILE_PATH = "./chain.json"
 GENESIS_DATA = b"Genesis!"
-GENESIS_DATA_MIME_TYPE = "text/plain"
 VERSION = "1"
 
 
@@ -26,7 +25,7 @@ class Chain(object):
 
     def _genesis(self):
         if len(self._block_chain) == 0:
-            self.push_block(GENESIS_DATA, GENESIS_DATA_MIME_TYPE)
+            self.push_block(GENESIS_DATA)
 
 
     def _load(self):
@@ -121,6 +120,8 @@ class Chain(object):
         serialized_block_data = self.serialize(block_data).encode()
         signature = digital_signature.signature(self._secret_key, serialized_block_data)
         block_data["signature"] = str(binascii.hexlify(signature), "ascii")
+
+        print(len(signature))
 
         self._block_chain.append(block_data)
         self._if_necessary_save()
