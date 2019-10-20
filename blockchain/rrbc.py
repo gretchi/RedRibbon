@@ -1,5 +1,7 @@
 
 import struct
+import ctypes
+
 
 HEADER_SIGNATURE = b"\x52\x52\x42\x43"
 CONTAINER_VERSION = 1
@@ -25,20 +27,22 @@ def _unpack(fh):
 
 
 def _pack(fh):
-    data = struct.pack(
+    chain_length = 0
+    data_size = 0
+
+    header = struct.pack(
         CONTAINER_HEADER_FORMAT
         , HEADER_SIGNATURE
         , CONTAINER_VERSION
-        , 0
-        , 0)
+        , chain_length
+        , data_size)
 
-    fh.write(data)
+    fh.write(header)
 
 
 def load(path):
     with open(path, "rb") as fh:
         _unpack(fh)
-
 
 
 def save(path):
